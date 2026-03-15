@@ -1,0 +1,14 @@
+# Audio files — managed via config.json, not tracked in git
+music_files/*.mp3
+music_files/*.wav
+music_files/*.ogg
+music_files/*.flac
+*.mp3
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg

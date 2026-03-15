@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "white-noise"
+version = "0.1.0"
+description = "A mobile-friendly FastAPI web app to play white-noise audio files via mpg123"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "jinja2>=3.1",
+]
+
+[project.scripts]
+white-noise = "white_noise.app:main"
+
+[tool.setuptools.packages.find]
+include = ["white_noise*"]
+
+[tool.setuptools.package-data]
+white_noise = ["templates/*.html"]

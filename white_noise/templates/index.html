@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>White Noise Player</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        /* ── Reset & base ──────────────────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #2c1a12, #4a2c16, #1a0f0a);
+            color: #fffaf0;
+            padding: 1.5rem;
+        }
+
+        /* ── Card ───────────────────────────────────────────────────── */
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 230, 200, 0.04);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 180, 100, 0.12);
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ── Header ─────────────────────────────────────────────────── */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.55rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.35rem;
+            background: linear-gradient(135deg, #ffcc33, #ffb347, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            color: rgba(255, 250, 240, 0.55);
+        }
+
+        /* ── Status indicator ──────────────────────────────────────── */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1.75rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: rgba(255, 250, 240, 0.6);
+            transition: color 0.3s;
+        }
+
+        .status-bar.playing {
+            color: #ffcc33;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 250, 240, 0.3);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .status-bar.playing .status-dot {
+            background: #ffcc33;
+            box-shadow: 0 0 8px #ffcc3388;
+            animation: pulse-dot 1.8s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* ── Buttons container ─────────────────────────────────────── */
+        .buttons {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        /* ── Play button ───────────────────────────────────────────── */
+        .btn {
+            position: relative;
+            width: 100%;
+            padding: 1.05rem 1rem;
+            border: none;
+            border-radius: 0.9rem;
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, #d35400, #e67e22);
+            box-shadow: 0 4px 14px rgba(211, 84, 0, 0.30);
+            transition: transform 0.15s, box-shadow 0.25s, filter 0.25s;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            opacity: 0;
+            background: rgba(255, 255, 255, 0.12);
+            transition: opacity 0.25s;
+        }
+
+        .btn:hover::after,
+        .btn:focus-visible::after {
+            opacity: 1;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Active / playing state */
+        .btn.active {
+            background: linear-gradient(135deg, #f39c12, #ffcc33);
+            box-shadow: 0 0 18px rgba(243, 156, 18, 0.45);
+        }
+
+        /* Ripple effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.30);
+            transform: scale(0);
+            animation: ripple-anim 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-anim {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* ── Stop button ───────────────────────────────────────────── */
+        .btn-stop {
+            margin-top: 0.6rem;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 0 4px 14px rgba(231, 76, 60, 0.30);
+        }
+
+        .btn-stop:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            filter: saturate(0.5);
+        }
+
+        /* ── Loading spinner inside button ─────────────────────────── */
+        .btn .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.65s linear infinite;
+            margin-right: 0.55rem;
+        }
+
+        .btn.loading .spinner {
+            display: inline-block;
+        }
+
+        .btn.loading {
+            pointer-events: none;
+            filter: brightness(0.85);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Footer ─────────────────────────────────────────────────── */
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: rgba(226, 224, 240, 0.25);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>🎵 White Noise Player</h1>
+            <p>Pick a duration and relax</p>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            <span class="status-dot"></span>
+            <span id="statusText">Idle</span>
+        </div>
+
+        <div class="buttons">
+            {% for key in songs %}
+            <button class="btn btn-play" data-song="{{ key }}" id="btn-{{ key }}">
+                <span class="spinner"></span>
+                <span class="label">▶ &nbsp;{{ key }}</span>
+            </button>
+            {% endfor %}
+
+            <button class="btn btn-stop" id="btnStop" disabled>
+                <span class="spinner"></span>
+                <span class="label">■ &nbsp;Stop</span>
+            </button>
+        </div>
+
+        <div class="footer">White Noise Player · Raspberry Pi</div>
+    </div>
+
+    <script>
+        const playButtons = document.querySelectorAll('.btn-play');
+        const stopBtn = document.getElementById('btnStop');
+        const statusBar = document.getElementById('statusBar');
+        const statusText = document.getElementById('statusText');
+        let currentSong = null;
+
+        /* ── Ripple effect ────────────────────────────────────────── */
+        function createRipple(e) {
+            const btn = e.currentTarget;
+            const rect = btn.getBoundingClientRect();
+            const r = document.createElement('span');
+            const size = Math.max(rect.width, rect.height);
+            r.style.width = r.style.height = `${size}px`;
+            r.style.left = `${e.clientX - rect.left - size / 2}px`;
+            r.style.top = `${e.clientY - rect.top - size / 2}px`;
+            r.classList.add('ripple');
+            btn.appendChild(r);
+            r.addEventListener('animationend', () => r.remove());
+        }
+        document.querySelectorAll('.btn').forEach(b => b.addEventListener('click', createRipple));
+
+        /* ── UI helpers ───────────────────────────────────────────── */
+        function setActive(songKey) {
+            currentSong = songKey;
+            playButtons.forEach(b => b.classList.toggle('active', b.dataset.song === songKey));
+            stopBtn.disabled = songKey === null;
+            statusBar.classList.toggle('playing', songKey !== null);
+            statusText.textContent = songKey ? `Playing ${songKey}` : 'Idle';
+        }
+
+        function setLoading(btn, on) {
+            btn.classList.toggle('loading', on);
+        }
+
+        /* ── API calls ────────────────────────────────────────────── */
+        async function playSong(songKey, btn) {
+            setLoading(btn, true);
+            try {
+                const res = await fetch(`/play/${encodeURIComponent(songKey)}`, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    setActive(songKey);
+                } else {
+                    alert(data.detail || 'Error playing song');
+                }
+            } catch (err) {
+                alert('Network error — is the server running?');
+            } finally {
+                setLoading(btn, false);
+            }
+        }
+
+        async function stopPlaying() {
+            setLoading(stopBtn, true);
+            try {
+                await fetch('/stop', { method: 'POST' });
+                setActive(null);
+            } catch (err) {
+                alert('Network error');
+            } finally {
+                setLoading(stopBtn, false);
+            }
+        }
+
+        /* ── Polling for status (every 5s) ────────────────────────── */
+        async function pollStatus() {
+            try {
+                const res = await fetch('/status');
+                const data = await res.json();
+                setActive(data.playing ? data.song : null);
+            } catch { /* ignore */ }
+        }
+        setInterval(pollStatus, 5000);
+
+        /* ── Event listeners ──────────────────────────────────────── */
+        playButtons.forEach(btn => {
+            btn.addEventListener('click', () => playSong(btn.dataset.song, btn));
+        });
+        stopBtn.addEventListener('click', stopPlaying);
+    </script>
+</body>
+
+</html>
