@@ -7,19 +7,16 @@ PROJECT_DIR="$(pwd)"
 VENV_DIR="$PROJECT_DIR/.venv"
 USER_NAME="$(whoami)"
 
-echo "Updating apt packages..."
+echo "Updating system packages..."
 sudo apt update
-
-echo "Installing Python 3.12..."
-sudo apt install -y python3.12 python3.12-venv curl mpg123
+sudo apt install -y curl mpg123
 
 echo "Installing uv..."
 curl -Ls https://astral.sh/uv/install.sh | sh
 
-# ensure uv is in PATH for this script
 export PATH="$HOME/.local/bin:$PATH"
 
-echo "Creating virtual environment..."
+echo "Creating Python 3.12 environment..."
 uv venv --python 3.12 "$VENV_DIR"
 
 echo "Activating environment..."
